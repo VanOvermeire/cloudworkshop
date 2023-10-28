@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  BranchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://???.jar
+      Handler: ???
+      Runtime: java17
+      MemorySize: 2048
+      Timeout: 30
+      Policies:
+        - AWSLambdaExecute
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:*
+              Resource:
+                - '*'
