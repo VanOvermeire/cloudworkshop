@@ -1,0 +1,37 @@
+# SNS Documentation
+
+Ref
+When you pass the logical ID of this resource to the intrinsic Ref function, Ref returns the topic ARN, for example: arn:aws:sns:us-east-1:123456789012:mystack-mytopic-NZJ5JSMVGFIE.
+
+Fn::GetAtt
+
+TopicArn
+Returns the ARN of an Amazon SNS topic.
+TopicName
+Returns the name of an Amazon SNS topic.
+
+# SQS Documentation
+
+Ref
+When you pass the logical ID of this resource to the intrinsic Ref function, Ref returns the queue URL. For example:
+
+{ "Ref": "https://sqs.us-east-2.amazonaws.com/123456789012/ab1-MyQueue-A2BCDEF3GHI4" }
+
+Fn::GetAtt
+
+Arn
+Returns the Amazon Resource Name (ARN) of the queue. For example: arn:aws:sqs:us-east-2:123456789012:mystack-myqueue-15PG5C2FC1CW8.
+QueueName
+Returns the queue name. For example: mystack-myqueue-1VF9BKQH5BJVI.
+QueueUrl
+Returns the URLs of the queues from the policy.
+
+
+
+# SNS event
+
+      Events:
+        SNSEvent:
+          Type: SNS
+          Properties:
+            Topic: name-or-ref-to-topic

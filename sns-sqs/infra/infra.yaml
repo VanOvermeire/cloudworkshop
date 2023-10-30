@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  # fill in the missing question marks
+  BranchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          TOPIC_ARN: ???
+      CodeUri: s3://???
+      Handler: ???
+      Runtime: java17
+      MemorySize: 2048
+      Timeout: 30
+      Policies:
+        - AWSLambdaExecute
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sns:*
+              Resource:
+                - '*'
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ???
+            RestApiId: !Ref ApiGatewayApi
+
+  SecondBranchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          QUEUE_URL: !Ref OurSqsTopic
+      CodeUri: s3://???
+      Handler: be.branch.sqs.ExampleHandler
+      Runtime: java17
+      MemorySize: 2048
+      Timeout: 30
+      Policies:
+        - AWSLambdaExecute
+      # add permission to write to SQS
+      # add 'Events' to listen to SNS
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+
+  # the sns topic
+  OurSnsTopic:
+    Type: AWS::SNS::Topic
+
+  # the sqs queue
+  OurSqsTopic:
+    Type: AWS::SQS::Queue
+
+Outputs:
+  RestUrl:
+    Value: !GetAtt ApiGatewayApi.RestApiId

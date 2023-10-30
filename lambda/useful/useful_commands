@@ -1,7 +1,8 @@
 mvn package or clean install
 # now upload the jar to a/your bucket
 aws s3 cp target/....jar s3://your-bucket
-
+# or to change the name
+aws s3 cp target/....jar s3://your-bucket/a-name.jar
 
 # DEPLOYING
 # replace the template-file and stack-name placeholders
