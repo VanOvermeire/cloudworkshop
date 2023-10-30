@@ -1,0 +1,2 @@
+# call with parameter overrides
+aws cloudformation deploy --template-file $TEMPLATE_NAME --stack-name $STACK_NAME --capabilities CAPABILITY_NAMED_IAM --parameter-overrides DYNAMOSOMETHING=real-name-of-the-db

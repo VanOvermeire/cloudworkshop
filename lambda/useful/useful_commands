@@ -1,19 +1,18 @@
 mvn package or clean install
-// now upload the jar to a/your bucket
-aws s3 cp...
+# now upload the jar to a/your bucket
+aws s3 cp target/....jar s3://your-bucket
 
 
-// DEPLOYING //
-// replace the template-file and stack-name placeholders
-// pick something like branch-workshop-{name} for your stack
-// CAPABILITY_NAMED_IAM is needed when you're creating roles
+# DEPLOYING
+# replace the template-file and stack-name placeholders
+# pick something like branch-workshop-{name} for your stack
+# CAPABILITY_NAMED_IAM is needed when you're creating roles
 aws cloudformation deploy --template-file $TEMPLATE_NAME --stack-name $STACK_NAME --capabilities CAPABILITY_NAMED_IAM
-// you also have a package command for packaging the lambda zips etc., but that's not needed here because we create and upload the jar ourselves
 
 
 
-// TESTING //
-// to test, you can use this input
+# TESTING
+# to test, you can use this input
 payload=`echo '{"name": "Thomas" }' | openssl base64`
-// and now get the right function name. response will be placed in your 'outfile'
+# and now get the right function name. response will be placed in your 'outfile'
 aws lambda invoke --function-name ${FUNCTION_NAME} --payload $payload outfile

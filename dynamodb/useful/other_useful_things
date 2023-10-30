@@ -1,0 +1,9 @@
+# Example on how to add env vars
+
+    Type: AWS::Serverless::Function
+    Properties:
+      ...
+      Environment:
+       Variables:
+         databaseName: hardcodeddatabasename
+         databaseUser: !Ref SomeValueFromElsewhereInTemplate
