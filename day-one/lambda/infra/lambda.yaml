@@ -12,7 +12,7 @@ Resources:
       Timeout: 30
       Policies:
         - AWSLambdaExecute
-        # below are example permissions, not really needed
+        # below are example permissions, not actually required
         - Version: '2012-10-17'
           Statement:
             - Effect: Allow

@@ -1,19 +1,21 @@
-mvn package or clean install
-# now upload the jar to a/your bucket
+mvn (clean) package or install
+# upload the jar to a/your bucket
 aws s3 cp target/....jar s3://your-bucket
-# or to change the name
+# or with custom name
 aws s3 cp target/....jar s3://your-bucket/a-name.jar
+
+
 
 # DEPLOYING
 # replace the template-file and stack-name placeholders
 # pick something like branch-workshop-{name} for your stack
-# CAPABILITY_NAMED_IAM is needed when you're creating roles
+# CAPABILITY_NAMED_IAM is needed when you're creating roles (which we do for our Lambda)
 aws cloudformation deploy --template-file $TEMPLATE_NAME --stack-name $STACK_NAME --capabilities CAPABILITY_NAMED_IAM
 
 
 
 # TESTING
-# to test, you can use this input
+# to test, you can use this input, transformed into base64
 payload=`echo '{"name": "Thomas" }' | openssl base64`
-# and now get the right function name. response will be placed in your 'outfile'
+# and now call with the right function name. the response will be placed in your 'outfile' (change the name if you like)
 aws lambda invoke --function-name ${FUNCTION_NAME} --payload $payload outfile

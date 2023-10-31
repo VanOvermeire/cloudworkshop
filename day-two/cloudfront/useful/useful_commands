@@ -1,0 +1,8 @@
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-distribution.html
+
+
+
+# more fancy stuff you can do with the CLI if needed/wanted
+# call the cloudfront url after retrieving it from our outputs
+# does require CURL!
+url=$(aws cloudformation describe-stacks --stack-name ${YOUR_STACK} --query 'Stacks[*].Outputs[0].OutputValue' --output text) && curl ${url}

@@ -1,17 +1,30 @@
 AWSTemplateFormatVersion : '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
+# add a db parameter if you want (or hard code instead)
+Parameters:
+  ???:
+    Type: ???
+
 Resources:
   BranchFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://???.jar
+      # add an environment section and reference the parameter
+      CodeUri: s3://???
       Handler: ???
       Runtime: java17
       MemorySize: 2048
       Timeout: 30
       Policies:
         - AWSLambdaExecute
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:*
+              Resource:
+                - '*'
       Events:
         ApiEvent:
           Type: Api
@@ -19,6 +32,7 @@ Resources:
             Path: /
             Method: ???
             RestApiId: !Ref ApiGatewayApi
+
   ApiGatewayApi:
     Type: AWS::Serverless::Api
     Properties:

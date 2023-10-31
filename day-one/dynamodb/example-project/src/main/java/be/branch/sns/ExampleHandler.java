@@ -16,7 +16,7 @@ public class ExampleHandler implements RequestHandler<APIGatewayProxyRequestEven
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, Context context) {
-        // get name from query params
+        // get name from the query params
         // create GetItemRequest with table name and the right key
         GetItemRequest getItemRequest = null;
         GetItemResult item = db.getItem(getItemRequest);
