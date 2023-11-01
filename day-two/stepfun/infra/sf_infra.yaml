@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  OurSqsTopic:
+    Type: AWS::SQS::Queue
+
+  TransformFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://another-branch-example/sf-1.0-SNAPSHOT.jar
+      Handler: be.branch.sf.ExampleHandler
+      Runtime: java17
+      MemorySize: 2048
+      Timeout: 30
+      Policies:
+        - AWSLambdaExecute
+
+# add the second function, which comes after the Wait and sends a message to SQS
+#  SqsFunction:
+#    Type: AWS::Serverless::Function
+
+  MySampleStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Role: !GetAtt SFRole.Arn
+      Definition:
+        StartAt: Uppercase
+        States:
+          # add an 'Uppercase' Task, a Choice and a Wait
+          # the Greeting Task (which will write to SQS after waiting) is already present
+          # as is a Fail as a default for the Choice
+          GreetBoss:
+            Type: Task
+            Resource: !GetAtt SqsFunction.Arn
+            End: true
+          Fail:
+            Type: Fail
+
+  # Role that allows step functions to invoke Lambdas
+  SFRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - states.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: "LambdaInvokePol"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 'lambda:InvokeFunction'
+                Resource: '*'

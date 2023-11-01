@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
+# look ma, not transforms!
 
 Resources:
   AssetsBucket:
@@ -67,12 +68,13 @@ Resources:
           QueryStringsConfig:
             QueryStringBehavior: none
 
-  # Create a CloudFront distribution that
-  # - is enabled...
-  # - has an S3 Origin with an origin access control
-  # - right domain name *might* be tricky
-  # - default root index.html
-  # - default cache for our S3 origin. Should refer to our default cache policy and redirect to https
+# Create a CloudFront distribution that
+# - is enabled...
+# - has an S3 Origin with an origin access control
+# - right domain name *might* be tricky
+# - default root index.html
+# - default cache for our S3 origin. Should refer to our default cache policy and redirect to https
+
 #  AssetsDistribution:
 #    Type: AWS::CloudFront::Distribution
 # ...
