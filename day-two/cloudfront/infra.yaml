@@ -37,6 +37,7 @@ Resources:
               Bool:
                 aws:SecureTransport: false
 
+  # used to be origin access identity
   CloudFrontOriginAccessControl:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
@@ -46,6 +47,7 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
+  # used to be 'forwarded values'
   DefaultCachePolicy:
     Type: AWS::CloudFront::CachePolicy
     Properties:

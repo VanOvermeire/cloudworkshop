@@ -2,15 +2,16 @@ AWSTemplateFormatVersion : '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 # add a db parameter if you want (or hard code instead)
-Parameters:
-  ???:
-    Type: ???
+#Parameters:
+#  ???:
+#    Type: ???
 
 Resources:
   BranchFunction:
     Type: AWS::Serverless::Function
     Properties:
-      # add an environment section and reference the parameter
+      # add an environment section and hard code the table name or reference the parameter
+      # see useful dir for some additional info
       CodeUri: s3://???
       Handler: ???
       Runtime: java17

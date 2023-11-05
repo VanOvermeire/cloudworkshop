@@ -34,4 +34,4 @@ Returns the URLs of the queues from the policy.
         SNSEvent:
           Type: SNS
           Properties:
-            Topic: name-or-ref-to-topic
+            Topic: arn-or-ref-to-topic
