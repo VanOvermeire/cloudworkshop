@@ -1,0 +1,11 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ECR Repository for our Docker Images
+
+Resources:
+  ECRRepository:
+    Type: AWS::ECR::Repository
+
+Outputs:
+  RepoName:
+    Value: !Ref ECRRepository
+    Description: Name of the ECR repo

@@ -25,9 +25,9 @@ Resources:
     Properties:
       Role: !GetAtt SFRole.Arn
       Definition:
-        StartAt: Uppercase
+        StartAt: Uppercase # <== our first Task should be named 'Uppercase'
         States:
-          # add an 'Uppercase' Task, a Choice and a Wait
+          # add an 'Uppercase' 'Task', a 'Choice' and a 'Wait'
           # the Greeting Task (which will write to SQS after waiting) is already present
           # as is a Fail as a default for the Choice
           GreetBoss:
