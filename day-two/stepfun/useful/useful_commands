@@ -1,0 +1,12 @@
+# to make sure the package command works, make sure you point to the location of your jars
+    CodeUri: ../path/to/code.jar
+# and run your mvn clean package first (so you actually have a jar...)
+
+# we package the code, sending the jars to an s3 bucket
+aws cloudformation package --template-file ${INFRA} --s3-bucket ${BUCKET} --output-template-file out.yaml
+
+# if you look at the output (out.yaml), you can see that de CodeUri points to a unique file in S3
+# if you change your code, and do a new mvn package, it will generate another upload with a new name/zip
+
+# we can use the produced 'out' file to deploy
+aws cloudformation deploy --template-file out.yaml --stack-name ${NAME} --capabilities CAPABILITY_NAMED_IAM

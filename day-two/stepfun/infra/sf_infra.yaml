@@ -8,7 +8,7 @@ Resources:
   TransformFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://another-branch-example/sf-1.0-SNAPSHOT.jar
+      CodeUri: ../example-project/target/sf-1.0-SNAPSHOT.jar # <== use this if you're going to do 'cloudformation package'
       Handler: be.branch.sf.ExampleHandler
       Runtime: java17
       MemorySize: 2048
