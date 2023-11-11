@@ -1,0 +1,5 @@
+# build the image, pointing to the JAR you created
+docker build --build-arg JAR=target/example-1.0-SNAPSHOT.jar -t "spring-example" .
+
+# run the image as a container, mapping port 8080 on your laptop to 8080 in the container
+docker run -it -p 8080:8080 spring-example
