@@ -5,7 +5,8 @@
 # FROM some-slim-java-container
 # COPY --from builder something.jar app.jar
 
-FROM openjdk:17-jdk
+# alpine images are generally smaller
+FROM amazoncorretto:17-alpine
 
 ARG JAR
 

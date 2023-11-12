@@ -1,5 +1,27 @@
 # build the image, pointing to the JAR you created
 docker build --build-arg JAR=target/example-1.0-SNAPSHOT.jar -t "spring-example" .
 
-# run the image as a container, mapping port 8080 on your laptop to 8080 in the container
+# run the image as a container, mapping your port 8080 to 8080 in the container
 docker run -it -p 8080:8080 spring-example
+
+# for running on ECS, you may need to set the right architecture (e.g. when running on Mac)
+docker buildx build --platform linux/amd64 --build-arg JAR=target/example-1.0-SNAPSHOT.jar -t spring-example --load .
+(and possibly docker buildx create --use desktop-linux if the above does not work)
+
+# no capabilities needed for ECR infra because we don't create roles here
+aws cloudformation deploy --template-file ecr.yaml --stack-name ${ECR_STACK}
+repo=$(aws cloudformation describe-stacks --stack-name ${ECR_STACK} --query 'Stacks[*].Outputs[0].OutputValue' --output text)
+
+# login to aws to push images to a private repo
+aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 890861971846.dkr.ecr.eu-west-1.amazonaws.com
+
+# tag the image to create one with the 'right' name
+# you can also add an explicit tag by adding ':some-tag' after the repo name
+docker tag spring-example ${repo}
+# you now have an additional docker image, with a name that matches the repo URI
+
+# that means you can push the image to your repo
+docker push ${repo}
+
+# and now we are finally ready for the deploy of the ecs infra
+aws cloudformation deploy --template-file ecs.yaml --stack-name ${ECS_STACK} --capabilities CAPABILITY_NAMED_IAM --parameter-overrides Image=${repo}

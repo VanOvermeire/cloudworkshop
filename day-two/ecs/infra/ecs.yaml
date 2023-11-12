@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: 2010-09-09
+# again no serverless
+
+Parameters:
+  # need to pass in the image
+  Image:
+    Type: String
+  Environment:
+    Type: String
+    Default: dev
+
+Mappings:
+  # this only changes when we change our account, so it is pretty safe to hard-code
+  # (passing it along as parameters is also an option, as is creating a specific VPC for the project)
+  VPC:
+    dev:
+      id: vpc-0ceb4c68bc967e4d6
+      subnetA: subnet-0fa9ab27bc9407c70
+      subnetB: subnet-0e751b12b9b203aba
+
+Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      CapacityProviders:
+        - FARGATE
+
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - ListenerHTTPS
+    Properties:
+      Cluster: !GetAtt Cluster.Arn
+      DesiredCount: 1
+      # CapacityProviderStrategyItem provides more control / flexibility than LaunchType
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !GetAtt ContainersSG.GroupId
+          Subnets:
+            - !FindInMap ['VPC', !Ref Environment, 'subnetA']
+            - !FindInMap ['VPC', !Ref Environment, 'subnetB']
+      SchedulingStrategy: REPLICA
+      TaskDefinition: !Ref TaskDefinition
+      LoadBalancers:
+        - ContainerName: !Sub "${AWS::StackName}-${Environment}" # should match task definition
+          ContainerPort: 8080
+          TargetGroupArn: !Ref TargetGroup
+      HealthCheckGracePeriodSeconds: 15 # give it some time when first starting the task
+      # Deployment options...
+
+  ContainersSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for traffic between Load Balancer and containers
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          SourceSecurityGroupId: !GetAtt FargateAlbSG.GroupId
+          Description: 'Allow all inbound *from* load balancer to our service'
+      VpcId: !FindInMap [ 'VPC', !Ref Environment, 'id' ]
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Image: !Ref Image
+          Name: !Sub "${AWS::StackName}-${Environment}"
+          MemoryReservation: 1024
+          Environment:
+            - Name: "BUCKET"
+              Value: !Ref Bucket # <= TODO add a bucket resource to this infra file, else the deploy will fail
+          # The below allows you to switch to a different architecture
+#          RuntimePlatform:
+#            CpuArchitecture: ARM64
+#            OperatingSystemFamily: LINUX
+          PortMappings:
+            - ContainerPort: 8080 # host port is automatically the same as this
+              Protocol: tcp # which is the default actually, the other option is UDP
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+      Cpu: 512
+      ExecutionRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole" # is often created manually or by infra maintained by a core team; log and pull permissions
+      Memory: 2048
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn: !GetAtt TaskRole.Arn
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: s3-permissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 's3:Get*'
+                Resource: '*'
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${AWS::StackName}-logs-${Environment}"
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application # optional
+      Scheme: internet-facing # default
+      Name: !Sub "${AWS::StackName}-LB" # LB because name can't be very long
+      Subnets:
+        - !FindInMap ['VPC', !Ref Environment, 'subnetA']
+        - !FindInMap ['VPC', !Ref Environment, 'subnetB']
+      SecurityGroups:
+        - !Ref FargateAlbSG
+
+  # listen to HTTP requests, send to the target group
+  ListenerHTTPS:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  # our targets are on port 8080
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      # TODO add a health check path property so the LB will do a check
+      HealthCheckIntervalSeconds: 15 # default is 30
+      Port: 8080
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !FindInMap [ 'VPC', !Ref Environment, 'id' ]
+
+  # allow port 80 going in, everything going out
+  FargateAlbSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for the Load Balancer
+      SecurityGroupIngress:
+        - CidrIp: "0.0.0.0/0"
+          Description: Allow all outgoing
+          FromPort: -1
+          ToPort: -1
+          IpProtocol: -1
+        - CidrIp: 0.0.0.0/0
+          Description: Allow port 80 inbound
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+      VpcId: # <= TODO find the VPC id in our map
+
+Outputs:
+  Endpoint:
+    Description: App Endpoint
+    Value: !GetAtt LoadBalancer.DNSName
