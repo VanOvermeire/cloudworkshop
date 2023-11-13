@@ -1,12 +1,14 @@
-# to make sure the package command works, make sure you point to the location of your jars
+# to make the 'package' command work:
+#  - run mvn package...
+#  - and point to the right jar location
     CodeUri: ../path/to/code.jar
-# and run your mvn clean package first (so you actually have a jar...)
 
-# we package the code, sending the jars to an s3 bucket
+# package the code, sending the jars to an s3 bucket with a unique name
 aws cloudformation package --template-file ${INFRA} --s3-bucket ${BUCKET} --output-template-file out.yaml
+# "Before the command uploads artifacts, it checks if the artifacts are already present in the S3 bucket...
+# The command uses MD5 checksums to compare files. If the values match, the command doesn't upload the artifacts. Use the --force-upload flag to skip this check..."
+# if you look at the output (out.yaml), you can see that de CodeUri now points to S3
+# if you change your code, *and* do a new mvn package, it will generate another upload with a new name/zip
 
-# if you look at the output (out.yaml), you can see that de CodeUri points to a unique file in S3
-# if you change your code, and do a new mvn package, it will generate another upload with a new name/zip
-
-# we can use the produced 'out' file to deploy
+# we can use the 'out' file to deploy
 aws cloudformation deploy --template-file out.yaml --stack-name ${NAME} --capabilities CAPABILITY_NAMED_IAM

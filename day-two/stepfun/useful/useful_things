@@ -1,22 +1,22 @@
 # structure of the SF states
 https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.html
 
-# task
-"Lambda Invoke": {
+# Task JSON
+"LambdaInvoke": {
   "Type": "Task",
   "Resource": "arn:aws:states:::lambda:invoke",
   "End": true
 }
 
-# wait
-"wait_ten_seconds": {
+# Wait JSON
+"WaitOne": {
   "Type": "Wait",
   "Seconds": 1,
   "Next": "NextState"
 }
 
-# choice
-"choice": {
+# Choice JSON
+"AChoice": {
   "Type": "Choice",
   "Choices" : [
         {

@@ -45,7 +45,7 @@ Resources:
       SchedulingStrategy: REPLICA
       TaskDefinition: !Ref TaskDefinition
       LoadBalancers:
-        - ContainerName: !Sub "${AWS::StackName}-${Environment}" # should match task definition
+        - ContainerName: !Sub "${AWS::StackName}-${Environment}" # should match task definition name
           ContainerPort: 8080
           TargetGroupArn: !Ref TargetGroup
       HealthCheckGracePeriodSeconds: 15 # give it some time when first starting the task
@@ -131,6 +131,24 @@ Resources:
       SecurityGroups:
         - !Ref FargateAlbSG
 
+  # allow port 80 going in, everything going out
+  FargateAlbSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG for the Load Balancer
+      SecurityGroupIngress:
+        - CidrIp: "0.0.0.0/0"
+          Description: Allow all outgoing
+          FromPort: -1
+          ToPort: -1
+          IpProtocol: -1
+        - CidrIp: 0.0.0.0/0
+          Description: Allow port 80 inbound
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+      VpcId: # <= TODO find the VPC id in our map
+
   # listen to HTTP requests, send to the target group
   ListenerHTTPS:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -152,24 +170,6 @@ Resources:
       Protocol: HTTP
       TargetType: ip
       VpcId: !FindInMap [ 'VPC', !Ref Environment, 'id' ]
-
-  # allow port 80 going in, everything going out
-  FargateAlbSG:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: SG for the Load Balancer
-      SecurityGroupIngress:
-        - CidrIp: "0.0.0.0/0"
-          Description: Allow all outgoing
-          FromPort: -1
-          ToPort: -1
-          IpProtocol: -1
-        - CidrIp: 0.0.0.0/0
-          Description: Allow port 80 inbound
-          FromPort: 80
-          ToPort: 80
-          IpProtocol: tcp
-      VpcId: # <= TODO find the VPC id in our map
 
 Outputs:
   Endpoint:

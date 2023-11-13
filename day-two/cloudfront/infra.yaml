@@ -5,7 +5,7 @@ Resources:
   AssetsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      # block normal public access
+      # block normal public access!
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -70,18 +70,18 @@ Resources:
           QueryStringsConfig:
             QueryStringBehavior: none
 
-# Create a CloudFront distribution that
+# TODO Create a CloudFront distribution that
 # - is enabled...
 # - has an S3 Origin with an origin access control
 # - right domain name *might* be tricky
-# - default root index.html
+# - default root object = index.html
 # - default cache for our S3 origin. Should refer to our default cache policy and redirect to https
 
-#  AssetsDistribution:
+#  Distribution:
 #    Type: AWS::CloudFront::Distribution
 # ...
 
 # you can activate this when the distro has been written
 #Outputs:
 #  URL:
-#    Value: !Sub "https://${AssetsDistribution.DomainName}"
+#    Value: !Sub "https://${Distribution.DomainName}"

@@ -8,7 +8,7 @@ Resources:
   TransformFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../example-project/target/sf-1.0-SNAPSHOT.jar # <== use this if you're going to do 'cloudformation package'
+      CodeUri: ../example-project/target/sf-1.0-SNAPSHOT.jar # <== use this with 'cloudformation package', else replace with your own S3 path
       Handler: be.branch.sf.ExampleHandler
       Runtime: java17
       MemorySize: 2048
@@ -16,7 +16,7 @@ Resources:
       Policies:
         - AWSLambdaExecute
 
-# add the second function, which comes after the Wait and sends a message to SQS
+# TODO add the second function, which will come after the Wait and sends a message to SQS
 #  SqsFunction:
 #    Type: AWS::Serverless::Function
 
@@ -25,11 +25,11 @@ Resources:
     Properties:
       Role: !GetAtt SFRole.Arn
       Definition:
-        StartAt: Uppercase # <== our first Task should be named 'Uppercase'
+        StartAt: Uppercase # <== so our first Task should be named 'Uppercase'
         States:
-          # add an 'Uppercase' 'Task', a 'Choice' and a 'Wait'
-          # the Greeting Task (which will write to SQS after waiting) is already present
-          # as is a Fail as a default for the Choice
+          # add an 'Uppercase' Task, a Choice and a Wait
+          # the 'Greeting' Task (which will write to SQS after the Wait) is already present
+          # as is a Fail, the default for Choice
           GreetBoss:
             Type: Task
             Resource: !GetAtt SqsFunction.Arn
@@ -37,7 +37,7 @@ Resources:
           Fail:
             Type: Fail
 
-  # Role that allows step functions to invoke Lambdas
+  # Role that allows the step function to invoke Lambdas
   SFRole:
     Type: AWS::IAM::Role
     Properties:
@@ -47,7 +47,7 @@ Resources:
           - Effect: Allow
             Principal:
               Service:
-                - states.amazonaws.com
+                - states.amazonaws.com # <== note the service
             Action:
               - 'sts:AssumeRole'
       Path: /
