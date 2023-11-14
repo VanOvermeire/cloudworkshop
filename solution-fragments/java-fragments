@@ -1,0 +1,105 @@
+package be.branch.dynamodb;
+
+// ...
+
+public class ExampleHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+
+    private final AmazonDynamoDB db = AmazonDynamoDBClientBuilder.defaultClient();
+    private final String tableName = System.getenv("DATABASE");
+
+    @Override
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, Context context) {
+        String name = apiGatewayProxyRequestEvent.getQueryStringParameters().get("name");
+        GetItemRequest getItemRequest = new GetItemRequest().withTableName(tableName).withKey(Map.of("name", new AttributeValue(name)));
+        GetItemResult item = db.getItem(getItemRequest);
+
+        return new APIGatewayProxyResponseEvent().withStatusCode(200).withBody(item.toString());
+    }
+}
+
+
+
+package be.branch.sns;
+
+// ...
+
+public class ExampleHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+
+    private final AmazonSNS snsClient = AmazonSNSClientBuilder.defaultClient();
+    private final String topic = System.getenv("TOPIC_ARN");
+
+    @Override
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, Context context) {
+        String name = apiGatewayProxyRequestEvent.getQueryStringParameters().get("name");
+        snsClient.publish(topic, name);
+        return new APIGatewayProxyResponseEvent().withStatusCode(200).withBody("OK");
+    }
+}
+
+
+
+package be.branch.sqs;
+
+// ...
+
+public class ExampleHandler implements RequestHandler<SNSEvent, String> {
+
+    private final AmazonSQS sqsClient = AmazonSQSClient.builder().build();
+    private final String queue = System.getenv("QUEUE_URL");
+
+    @Override
+    public String handleRequest(SNSEvent snsEvent, Context context) {
+        String message = snsEvent.getRecords().get(0).getSNS().getMessage();
+        sqsClient.sendMessage(queue, message);
+        return "OK";
+    }
+}
+
+
+
+record Input(String name) {}
+record Output(String transformed) {}
+
+public class ExampleHandler implements RequestHandler<Input, Output> {
+    @Override
+    public Output handleRequest(Input input, Context context) {
+        return new Output(input.name().toUpperCase());
+    }
+}
+
+
+
+record Input(String transformed) {}
+record Output() {}
+
+public class ExampleHandler implements RequestHandler<Input, Output> {
+
+    private final AmazonSQS sqsClient = AmazonSQSClient.builder().build();
+    private final String queue = System.getenv("QUEUE_URL");
+
+    @Override
+    public Output handleRequest(Input input, Context context) {
+        sqsClient.sendMessage(queue, "Hi " + input.transformed());
+        return new Output();
+    }
+}
+
+
+
+package be.branch.ecs;
+
+// ...
+
+@RestController
+public class HelloController {
+
+    private String bucketName = System.getenv("BUCKET");
+    private AmazonS3 client = AmazonS3Client.builder().build();
+
+    @GetMapping("/hello")
+    public String hello() throws IOException {
+        S3Object somekey = client.getObject(bucketName, "somekey");
+        var reader = new BufferedReader(new InputStreamReader(somekey.getObjectContent()));
+        return reader.readLine();
+    }
+}

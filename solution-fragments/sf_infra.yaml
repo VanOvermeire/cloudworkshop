@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  OurSqsTopic:
+    Type: AWS::SQS::Queue
+
+  TransformFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://another-branch-example/sf-1.0-SNAPSHOT.jar
+      Handler: be.branch.sf.ExampleHandler
+      Runtime: java17
+      MemorySize: 2048
+      Timeout: 30
+      Policies:
+        - AWSLambdaExecute
+
+  SqsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://another-branch-example/sqs-1.0-SNAPSHOT.jar
+      Handler: be.branch.sqs.ExampleHandler
+      Runtime: java17
+      MemorySize: 2048
+      Environment:
+        Variables:
+          QUEUE_URL: !Ref OurSqsTopic
+      Timeout: 30
+      Policies:
+        - AWSLambdaExecute
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource:
+                - '*'
+
+  MySampleStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Role: !GetAtt SFRole.Arn
+      Definition:
+        StartAt: Uppercase
+        States:
+          Uppercase:
+            Type: Task
+            Resource: !GetAtt TransformFunction.Arn
+            Next: BossChoice
+            #            InputPath: '$.nested' <== for second exercise
+          BossChoice:
+            Type: Choice
+            Choices:
+              - Variable: "$.transformed"
+                StringEquals: THOMAS
+                Next: WaitABit
+            Default: Fail
+          WaitABit:
+            Type: Wait
+            Seconds: 1
+            Next: GreetBoss
+          GreetBoss:
+            Type: Task
+            Resource: !GetAtt SqsFunction.Arn
+            End: true
+          Fail:
+            Type: Fail
+
+  SFRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - states.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: "LambdaInvokePol"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 'lambda:InvokeFunction'
+                Resource: '*'

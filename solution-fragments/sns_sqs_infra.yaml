@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  BranchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          TOPIC_ARN: !Ref OurSnsTopic
+      CodeUri: s3://another-branch-example/first.jar
+      Handler: be.branch.sns.ExampleHandler
+      Runtime: java17
+      MemorySize: 2048
+      Timeout: 30
+      Policies:
+        - AWSLambdaExecute
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource:
+                - !Ref OurSnsTopic
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+            RestApiId:
+              Ref: ApiGatewayApi
+
+  SecondBranchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          QUEUE_URL: !Ref OurSqsTopic
+      CodeUri: s3://another-branch-example/second.jar
+      Handler: be.branch.sqs.ExampleHandler
+      Runtime: java17
+      MemorySize: 2048
+      Timeout: 30
+      Policies:
+        - AWSLambdaExecute
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:*
+              Resource:
+                - !GetAtt OurSqsTopic.Arn
+      Events:
+        SNSEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref OurSnsTopic
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+
+  OurSnsTopic:
+    Type: AWS::SNS::Topic
+
+  OurSqsTopic:
+    Type: AWS::SQS::Queue
+
+Outputs:
+  RestUrl:
+    Value: !GetAtt ApiGatewayApi.RestApiId

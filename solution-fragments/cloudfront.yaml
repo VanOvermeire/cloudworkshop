@@ -1,11 +1,9 @@
 AWSTemplateFormatVersion: "2010-09-09"
-# look ma, not transforms!
 
 Resources:
   AssetsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      # block normal public access!
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -17,7 +15,6 @@ Resources:
     Properties:
       Bucket: !Ref AssetsBucket
       PolicyDocument:
-        # only allow cloudfront's access origin control to get objects
         Statement:
           - Action: s3:GetObject
             Effect: Allow
@@ -26,7 +23,7 @@ Resources:
               Service: cloudfront.amazonaws.com
             Condition:
               StringEquals:
-                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${AssetsDistribution}
           - Effect: Deny
             Principal: '*'
             Action: 's3:*'
@@ -37,17 +34,6 @@ Resources:
               Bool:
                 aws:SecureTransport: false
 
-  # used to be origin access identity
-  CloudFrontOriginAccessControl:
-    Type: AWS::CloudFront::OriginAccessControl
-    Properties:
-      OriginAccessControlConfig:
-        Name: !Ref AWS::StackName
-        OriginAccessControlOriginType: s3
-        SigningBehavior: always
-        SigningProtocol: sigv4
-
-  # used to be 'forwarded values'
   DefaultCachePolicy:
     Type: AWS::CloudFront::CachePolicy
     Properties:
@@ -63,25 +49,44 @@ Resources:
           HeadersConfig:
             HeaderBehavior: whitelist
             Headers:
-              # some example headers
+              # some examples
               - Accept
               - Origin
               - Authorization
           QueryStringsConfig:
             QueryStringBehavior: none
 
-# TODO Create a CloudFront distribution that
-# - is enabled...
-# - has an S3 Origin with an origin access control
-# - right domain name *might* be tricky
-# - default root object = index.html
-# - default cache for our S3 origin. Should refer to our default cache policy and redirect to https
+  CloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Ref AWS::StackName
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
 
-#  Distribution:
-#    Type: AWS::CloudFront::Distribution
-# ...
+  AssetsDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt AssetsBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+            OriginAccessControlId: !GetAtt CloudFrontOriginAccessControl.Id
+        Enabled: true
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          CachePolicyId: !Ref DefaultCachePolicy
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+        # below not really required
+        HttpVersion: http2
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+        IPV6Enabled: false
 
-# you can activate this when the distro has been written
-#Outputs:
-#  URL:
-#    Value: !Sub "https://${Distribution.DomainName}"
+Outputs:
+  URL:
+    Value: !Join [ "", [ "https://", !GetAtt AssetsDistribution.DomainName ]]

@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  DynamoDBTable:
+    Type: String
+
+Resources:
+  BranchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          DATABASE: !Ref DynamoDBTable
+      CodeUri: s3://another-branch-example/something.jar
+      Handler: be.branch.dynamodb.ExampleHandler
+      Runtime: java17
+      MemorySize: 2048
+      Timeout: 30
+      Policies:
+        - AWSLambdaExecute
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:*
+              Resource:
+                - '*'
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:*
+              Resource:
+                - '*'
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+            RestApiId:
+              Ref: ApiGatewayApi
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+
+Outputs:
+  RestUrl:
+    Value: !GetAtt ApiGatewayApi.RestApiId
