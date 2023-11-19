@@ -1,0 +1,18 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Entered the install phase...
+      - yum -y update
+      - yum -y install maven && yum -y install awscli
+  build:
+    commands:
+      - echo Entered the build phase...
+      - cd example-project && mvn package
+      # optionally, we could pass in the bucket name via env vars
+      - cd .. && aws cloudformation package --template-file infra.yaml --s3-bucket branch-config-bucket --output-template-file out.yml
+
+artifacts:
+  files:
+    - out.yml

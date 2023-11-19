@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  BranchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./example-project/target/example-1.0-SNAPSHOT.jar
+      Handler: be.branch.example.ExampleHandler
+      Runtime: java17
+      MemorySize: 2048
+      Timeout: 30
+      Policies:
+        - AWSLambdaExecute
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: GET
+            RestApiId: !Ref ApiGatewayApi
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+
+Outputs:
+  RestUrl:
+    Value: !GetAtt ApiGatewayApi.RestApiId
